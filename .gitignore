@@ -1,0 +1,7 @@
+#Ignore the build folder and object files
+
+[Bb]uild/
+*.[oa]
+*~
+.cproject
+.project
