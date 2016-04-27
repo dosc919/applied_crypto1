@@ -75,62 +75,28 @@ static const BYTE sbox8[64] = {
 };
 
 /*********************** FUNCTION DEFINITIONS ***********************/
-// Initial (Inv)Permutation step
-void IP(WORD state[], const BYTE in[])
+void Initial_Breakup(WORD state[], const BYTE in[])
 {
-	state[0] = BITNUM(in,57,31) | BITNUM(in,49,30) | BITNUM(in,41,29) | BITNUM(in,33,28) |
-				  BITNUM(in,25,27) | BITNUM(in,17,26) | BITNUM(in,9,25) | BITNUM(in,1,24) |
-				  BITNUM(in,59,23) | BITNUM(in,51,22) | BITNUM(in,43,21) | BITNUM(in,35,20) |
-				  BITNUM(in,27,19) | BITNUM(in,19,18) | BITNUM(in,11,17) | BITNUM(in,3,16) |
-				  BITNUM(in,61,15) | BITNUM(in,53,14) | BITNUM(in,45,13) | BITNUM(in,37,12) |
-				  BITNUM(in,29,11) | BITNUM(in,21,10) | BITNUM(in,13,9) | BITNUM(in,5,8) |
-				  BITNUM(in,63,7) | BITNUM(in,55,6) | BITNUM(in,47,5) | BITNUM(in,39,4) |
-				  BITNUM(in,31,3) | BITNUM(in,23,2) | BITNUM(in,15,1) | BITNUM(in,7,0);
-
-	state[1] = BITNUM(in,56,31) | BITNUM(in,48,30) | BITNUM(in,40,29) | BITNUM(in,32,28) |
-				  BITNUM(in,24,27) | BITNUM(in,16,26) | BITNUM(in,8,25) | BITNUM(in,0,24) |
-				  BITNUM(in,58,23) | BITNUM(in,50,22) | BITNUM(in,42,21) | BITNUM(in,34,20) |
-				  BITNUM(in,26,19) | BITNUM(in,18,18) | BITNUM(in,10,17) | BITNUM(in,2,16) |
-				  BITNUM(in,60,15) | BITNUM(in,52,14) | BITNUM(in,44,13) | BITNUM(in,36,12) |
-				  BITNUM(in,28,11) | BITNUM(in,20,10) | BITNUM(in,12,9) | BITNUM(in,4,8) |
-				  BITNUM(in,62,7) | BITNUM(in,54,6) | BITNUM(in,46,5) | BITNUM(in,38,4) |
-				  BITNUM(in,30,3) | BITNUM(in,22,2) | BITNUM(in,14,1) | BITNUM(in,6,0);
+	state[0] = 0;
+	state[1] = 0;
+	int i = 0;
+	for(i = 0; i<4; i++)
+	{
+		state[0] += in[i] << (8*(3-i));
+		state[1] += in[4+i] << (8*(3-i));
+	}
 }
 
-void InvIP(WORD state[], BYTE in[])
+void Final_Breakup(WORD state[], BYTE out[])
 {
-	in[0] = BITNUMINTR(state[1],7,7) | BITNUMINTR(state[0],7,6) | BITNUMINTR(state[1],15,5) |
-			  BITNUMINTR(state[0],15,4) | BITNUMINTR(state[1],23,3) | BITNUMINTR(state[0],23,2) |
-			  BITNUMINTR(state[1],31,1) | BITNUMINTR(state[0],31,0);
-
-	in[1] = BITNUMINTR(state[1],6,7) | BITNUMINTR(state[0],6,6) | BITNUMINTR(state[1],14,5) |
-			  BITNUMINTR(state[0],14,4) | BITNUMINTR(state[1],22,3) | BITNUMINTR(state[0],22,2) |
-			  BITNUMINTR(state[1],30,1) | BITNUMINTR(state[0],30,0);
-
-	in[2] = BITNUMINTR(state[1],5,7) | BITNUMINTR(state[0],5,6) | BITNUMINTR(state[1],13,5) |
-			  BITNUMINTR(state[0],13,4) | BITNUMINTR(state[1],21,3) | BITNUMINTR(state[0],21,2) |
-			  BITNUMINTR(state[1],29,1) | BITNUMINTR(state[0],29,0);
-
-	in[3] = BITNUMINTR(state[1],4,7) | BITNUMINTR(state[0],4,6) | BITNUMINTR(state[1],12,5) |
-			  BITNUMINTR(state[0],12,4) | BITNUMINTR(state[1],20,3) | BITNUMINTR(state[0],20,2) |
-			  BITNUMINTR(state[1],28,1) | BITNUMINTR(state[0],28,0);
-
-	in[4] = BITNUMINTR(state[1],3,7) | BITNUMINTR(state[0],3,6) | BITNUMINTR(state[1],11,5) |
-			  BITNUMINTR(state[0],11,4) | BITNUMINTR(state[1],19,3) | BITNUMINTR(state[0],19,2) |
-			  BITNUMINTR(state[1],27,1) | BITNUMINTR(state[0],27,0);
-
-	in[5] = BITNUMINTR(state[1],2,7) | BITNUMINTR(state[0],2,6) | BITNUMINTR(state[1],10,5) |
-			  BITNUMINTR(state[0],10,4) | BITNUMINTR(state[1],18,3) | BITNUMINTR(state[0],18,2) |
-			  BITNUMINTR(state[1],26,1) | BITNUMINTR(state[0],26,0);
-
-	in[6] = BITNUMINTR(state[1],1,7) | BITNUMINTR(state[0],1,6) | BITNUMINTR(state[1],9,5) |
-			  BITNUMINTR(state[0],9,4) | BITNUMINTR(state[1],17,3) | BITNUMINTR(state[0],17,2) |
-			  BITNUMINTR(state[1],25,1) | BITNUMINTR(state[0],25,0);
-
-	in[7] = BITNUMINTR(state[1],0,7) | BITNUMINTR(state[0],0,6) | BITNUMINTR(state[1],8,5) |
-			  BITNUMINTR(state[0],8,4) | BITNUMINTR(state[1],16,3) | BITNUMINTR(state[0],16,2) |
-			  BITNUMINTR(state[1],24,1) | BITNUMINTR(state[0],24,0);
+	int i = 0;
+    for(i = 0; i<4; i++)
+    {
+        out[i] = (state[0] >> (8*(3-i))) & 0xFF;
+        out[4+i] = (state[1] >> (8*(3-i))) & 0xFF;
+    }
 }
+
 
 WORD f(WORD state, const BYTE key[])
 {
@@ -190,7 +156,7 @@ WORD f(WORD state, const BYTE key[])
 	return(state);
 }
 
-void des_key_setup(const BYTE key[], BYTE schedule[][6], DES_MODE mode)
+void des_key_setup(const BYTE key[], BYTE schedule[][6], DES_MODE mode, const int rounds)
 {
 	WORD i, j, to_gen, C, D;
 	const WORD key_rnd_shift[16] = {1,1,2,2,2,2,2,2,1,2,2,2,2,2,2,1};
@@ -209,15 +175,15 @@ void des_key_setup(const BYTE key[], BYTE schedule[][6], DES_MODE mode)
 	for (i = 0, j = 31, D = 0; i < 28; ++i, --j)
 		D |= BITNUM(key,key_perm_d[i],j);
 
-	// Generate the 16 subkeys.
-	for (i = 0; i < 16; ++i) {
+	// Generate the round subkeys.
+	for (i = 0; i < rounds; ++i) {
 		C = ((C << key_rnd_shift[i]) | (C >> (28-key_rnd_shift[i]))) & 0xfffffff0;
 		D = ((D << key_rnd_shift[i]) | (D >> (28-key_rnd_shift[i]))) & 0xfffffff0;
 
 		// Decryption subkeys are reverse order of encryption subkeys so
 		// generate them in reverse if the key schedule is for decryption useage.
 		if (mode == DES_DECRYPT)
-			to_gen = 15 - i;
+			to_gen = (rounds-1) - i;
 		else /*(if mode == DES_ENCRYPT)*/
 			to_gen = i;
 		// Initialize the array
@@ -230,40 +196,20 @@ void des_key_setup(const BYTE key[], BYTE schedule[][6], DES_MODE mode)
 	}
 }
 
-void des_crypt(const BYTE in[], BYTE out[], const BYTE key[][6])
+void des_crypt(const BYTE in[], BYTE out[], const BYTE key[][6], const int rounds)
 {
 	WORD state[2],idx,t;
 
-	IP(state,in);
+	//no permutation
+    Initial_Breakup(state,in);
 
-	for (idx=0; idx < 15; ++idx) {
+	for (idx=0; idx < (rounds-1); ++idx) {
 		t = state[1];
 		state[1] = f(state[1],key[idx]) ^ state[0];
 		state[0] = t;
 	}
 	// Perform the final loop manually as it doesn't switch sides
-	state[0] = f(state[1],key[15]) ^ state[0];
+	state[0] = f(state[1],key[rounds-1]) ^ state[0];
 
-	InvIP(state,out);
-}
-
-void three_des_key_setup(const BYTE key[], BYTE schedule[][16][6], DES_MODE mode)
-{
-	if (mode == DES_ENCRYPT) {
-		des_key_setup(&key[0],schedule[0],mode);
-		des_key_setup(&key[8],schedule[1],!mode);
-		des_key_setup(&key[16],schedule[2],mode);
-	}
-	else /*if (mode == DES_DECRYPT*/ {
-		des_key_setup(&key[16],schedule[0],mode);
-		des_key_setup(&key[8],schedule[1],!mode);
-		des_key_setup(&key[0],schedule[2],mode);
-	}
-}
-
-void three_des_crypt(const BYTE in[], BYTE out[], const BYTE key[][16][6])
-{
-	des_crypt(in,out,key[0]);
-	des_crypt(out,out,key[1]);
-	des_crypt(out,out,key[2]);
+	Final_Breakup(state,out);
 }

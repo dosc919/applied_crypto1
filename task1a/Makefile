@@ -3,7 +3,7 @@ CFLAGS=-c -Wall
 LDFLAGS=
 SOURCES=des_test.c des.c
 OBJECTS=$(SOURCES:.c=.o)
-EXECUTABLE=des_test
+EXECUTABLE=build/des_test
 
 all: run
 	$(SOURCES) $(EXECUTABLE)

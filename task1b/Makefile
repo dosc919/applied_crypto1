@@ -3,7 +3,7 @@ CFLAGS=-c -Wall
 LDFLAGS=
 SOURCES=aes.c aes_test.c
 OBJECTS=$(SOURCES:.c=.o)
-EXECUTABLE=aes_test
+EXECUTABLE=build/aes_test
 
 all: run
 	$(SOURCES) $(EXECUTABLE)
