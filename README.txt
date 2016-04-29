@@ -17,6 +17,8 @@ https://github.com/gvanas/KeccakCodePackage
 ###########################################
 
 DES:
+make run
+  execute all attacks (3,5,7,8 rounds)
 
 AES:
 make run4
