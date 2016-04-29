@@ -213,3 +213,184 @@ void des_crypt(const BYTE in[], BYTE out[], const BYTE key[][6], const int round
 
 	Final_Breakup(state,out);
 }
+
+void rand_plaintext(const BYTE curr_state[], BYTE next_state[], BYTE output_plaintext[])
+{
+	BYTE in0[DES_BLOCK_SIZE] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+	BYTE in1[DES_BLOCK_SIZE] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01};
+	BYTE schedule[8][6];
+	des_key_setup(curr_state,schedule,DES_ENCRYPT,8);
+	des_crypt(in0, next_state, schedule, 8);
+	des_crypt(in1, output_plaintext, schedule, 8);
+}
+
+BYTE compute_left_side(const BYTE plaintext[], const BYTE ciphertext[], int rounds)
+{
+	if((rounds != 3)&&(rounds != 5)&&(rounds !=7)&&(rounds != 8))
+	{
+		return 0xFF;
+	}
+	if(rounds == 3)
+	{
+		//gather the needed bits for 3 rounds
+		BYTE Pr15,Cl15,Pl7,Pl18,Pl24,Pl29,Cr7,Cr18,Cr24,Cr29;
+		Pr15 = (plaintext[6] >> 7) & 0x01;
+		Cl15 = (ciphertext[2] >> 7) & 0x01;
+		Pl7 = (plaintext[3] >> 7) & 0x01;
+		Pl18 = (plaintext[1] >> 2) & 0x01;
+		Pl24 = plaintext[0] & 0x01;
+		Pl29 = (plaintext[0] >> 5) & 0x01;
+		Cr7 = (ciphertext[7] >> 7) & 0x01;
+		Cr18 = (ciphertext[5] >> 2) & 0x01;
+		Cr24 = ciphertext[4] & 0x01;
+		Cr29 = (ciphertext[4] >> 5) & 0x01;
+		return (Pr15 ^ Cl15 ^ Pl7 ^ Pl18 ^ Pl24 ^ Pl29 ^ Cr7 ^ Cr18 ^ Cr24 ^ Cr29);
+	}
+	else if(rounds == 5)
+	{
+		//gather the bits for 5 rounds
+		BYTE Pl15,Pr7,Pr18,Pr24,Pr27,Pr28,Pr29,Pr30,Pr31;
+		BYTE Cr15,Cl7,Cl18,Cl24,Cl27,Cl28,Cl29,Cl30,Cl31;
+		Pl15 = (plaintext[2] >> 7) & 0x01;
+		Pr7 = (plaintext[7] >> 7) & 0x01;
+		Pr18 = (plaintext[5] >> 2) & 0x01;
+		Pr24 = plaintext[4] & 0x01;
+		Pr27 = (plaintext[4] >> 3) & 0x01;
+		Pr28 = (plaintext[4] >> 4) & 0x01;
+		Pr29 = (plaintext[4] >> 5) & 0x01;
+		Pr30 = (plaintext[4] >> 6) & 0x01;
+		Pr31 = (plaintext[4] >> 7) & 0x01;
+		Cr15 = (ciphertext[6] >> 7) & 0x01;
+		Cl7 = (ciphertext[3] >> 7) & 0x01;
+		Cl18 = (ciphertext[1] >> 2) & 0x01;
+		Cl24 = ciphertext[0] & 0x01;
+		Cl27 = (ciphertext[0] >> 3) & 0x01;
+		Cl28 = (ciphertext[0] >> 4) & 0x01;
+		Cl29 = (ciphertext[0] >> 5) & 0x01;
+		Cl30 = (ciphertext[0] >> 6) & 0x01;
+		Cl31 = (ciphertext[0] >> 7) & 0x01;
+		return (Pl15 ^ Pr7 ^ Pr18 ^ Pr24 ^ Pr27 ^ Pr28 ^ Pr29 ^ Pr30 ^ Pr31 ^ Cr15 ^ Cl7 ^ Cl18 ^ Cl24 ^ Cl27 ^ Cl28 ^ Cl29 ^ Cl30 ^ Cl31);
+	}
+	else if(rounds == 7)
+	{
+		//using L0[7,18,24] ^ R0[12,16] ^ R7[15] ^ L7[7,18,24,29]   maybe wrong
+		BYTE Pl7, Pl18, Pl24, Pr12, Pr16;
+		BYTE Cl7, Cl18, Cl24, Cl29, Cr15;
+		Pl7 = (plaintext[3] >> 7) & 0x01;
+		Pl18 = (plaintext[1] >> 2) & 0x01;
+		Pl24 = (plaintext[0]) & 0x01;
+		Pr12 = (plaintext[6] >> 4) & 0x01;
+		Pr16 = (plaintext[5]) & 0x01;
+		Cl7 = (ciphertext[3] >> 7) & 0x01;
+		Cl18 = (ciphertext[1] >> 2) & 0x01;
+		Cl24 = ciphertext[0] & 0x01;
+		Cl29 = (ciphertext[0] >> 5) & 0x01;
+		Cr15 = (ciphertext[6] >> 7) & 0x01;
+		return (Pl7 ^ Pl18 ^ Pl24 ^ Pr12 ^ Pr16 ^ Cl7 ^ Cl18 ^ Cl24 ^ Cl29 ^ Cr15);
+	}
+	else
+	{
+		BYTE Pl7, Pl18, Pl24, Pr12, Pr16;
+		BYTE Cl15, Cr7, Cr18, Cr24, Cr29, F8;
+		Pl7 = (plaintext[3] >> 7) & 0x01;
+		Pl18 = (plaintext[1] >> 2) & 0x01;
+		Pl24 = (plaintext[0]) & 0x01;
+		Pr12 = (plaintext[6] >> 4) & 0x01;
+		Pr16 = (plaintext[5]) & 0x01;
+		Cr7 = (ciphertext[7] >> 7) & 0x01;
+		Cr18 = (ciphertext[5] >> 2) & 0x01;
+		Cr24 = ciphertext[4] & 0x01;
+		Cr29 = (ciphertext[4] >> 5) & 0x01;
+		Cl15 = (ciphertext[2] >> 7) & 0x01;
+		F8 = 0xFF; //todo insert F[R8,K8][15] here
+		return (Pl7 ^ Pl18 ^ Pl24 ^ Pr12 ^ Pr16 ^ Cr7 ^ Cr18 ^ Cr24 ^ Cr29 ^ Cl15 );//^ F8);
+	}
+
+	return 0xFF;
+}
+
+void algorithm1(const BYTE plain[][DES_BLOCK_SIZE], const BYTE key[][6], unsigned int* count_T0, unsigned int* count_T1, int number_of_plains, int rounds)
+{
+	BYTE ciphertext[DES_BLOCK_SIZE];
+	int i = 0;
+	BYTE solution = 0x00;
+	for(i = 0; i < number_of_plains; i++)
+	{
+		des_crypt(plain[i], ciphertext, key, rounds);
+		solution = compute_left_side(plain[i], ciphertext, rounds);
+		if(solution == 0xFF)
+		{
+			*count_T0 = -1;
+			*count_T1 = -1;
+			return;
+		}
+        if(solution == 0x00)
+        {
+        	*count_T0 += 1;
+        }
+        else if(solution == 0x01)
+        {
+        	*count_T1 += 1;
+        }
+	}
+}
+
+int algorithm2(const BYTE plain[][DES_BLOCK_SIZE], const BYTE key[], BYTE key8bits[], unsigned int count_T0[], unsigned int count_T1[], int number_of_plains, int keyguesses)
+{
+	BYTE keyguess[6];
+	BYTE keyschedule[8][6];
+	int i = 0;
+	int j = 0;
+	int correct_keyguess = 0;
+	unsigned int diff[keyguesses];
+	//only bits 42-47 of K8 are relevant, setting other bits to 0
+	keyguess[1] = 0x00;
+	keyguess[2] = 0x00;
+	keyguess[3] = 0x00;
+	keyguess[4] = 0x00;
+	keyguess[5] = 0x00;
+
+	for(i = 0; i<keyguesses; i++)
+	{
+		//initialize counters
+		count_T0[i] = 0;
+		count_T1[i] = 0;
+		//guess key, only 6 bits are effective (???? ??00)
+        keyguess[0] = (i << 2) & 0xFC;
+
+		des_key_setup(key, keyschedule, DES_ENCRYPT, 8);
+		for(j = 0; j<6; j++)
+		{
+			keyschedule[7][j] = keyguess[j];
+		}
+		algorithm1(plain, keyschedule, &count_T0[i], &count_T1[i], number_of_plains, 8);
+		if(count_T0[i] > count_T1[i])
+		{
+			diff[i] = count_T0[i] - count_T1[i];
+		}
+		else
+		{
+			diff[i] = count_T1[i] - count_T0[i];
+		}
+	}
+
+	//search the highest difference between T0 and T1
+	unsigned int max = diff[0];
+	for(i = 1; i<keyguesses;i++)
+	{
+		if(max < diff[i])
+		{
+			max = diff[i];
+			correct_keyguess = i;
+		}
+	}
+	keyguess[0] = (correct_keyguess << 2) & 0xFC;
+
+	//storing the guessed key bits K8[42] - K8[47]
+	for(i = 0; i < 6; i++)
+	{
+		key8bits[i] = (keyguess[0] >> (2+i)) & 0x01;
+	}
+	return correct_keyguess;
+}
+

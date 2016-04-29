@@ -30,5 +30,8 @@ typedef enum {
 /*********************** FUNCTION DECLARATIONS **********************/
 void des_key_setup(const BYTE key[], BYTE schedule[][6], DES_MODE mode, const int rounds);
 void des_crypt(const BYTE in[], BYTE out[], const BYTE key[][6], const int rounds);
+void rand_plaintext(const BYTE curr_state[], BYTE next_state[], BYTE output_plaintext[]);
+void algorithm1(const BYTE plain[][DES_BLOCK_SIZE],const BYTE key[][6], unsigned int* count_T0, unsigned int* count_T1, int number_of_plains,int rounds);
+int algorithm2(const BYTE plain[][DES_BLOCK_SIZE], const BYTE key[], BYTE key8bits[], unsigned int count_T0[], unsigned int count_T1[], int number_of_plains, int keyguesses);
 
 #endif   // DES_H
