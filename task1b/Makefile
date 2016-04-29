@@ -17,6 +17,12 @@ $(EXECUTABLE): $(OBJECTS)
 run: $(EXECUTABLE)
 	./$(EXECUTABLE)
 
+run4: $(EXECUTABLE)
+	./$(EXECUTABLE) 4
+
+run5: $(EXECUTABLE)
+	./$(EXECUTABLE) 5
+
 .PHONY: all run
 
 clean:
