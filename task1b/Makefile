@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-c -Wall
 LDFLAGS=
 SOURCES=aes.c aes_square.c
-OBJECTS=$(SOURCES:.c=.o)
+OBJECTS=build/$(SOURCES:.c=.o)
 EXECUTABLE=build/aes_square
 
 all: run
@@ -11,8 +11,8 @@ all: run
 $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
 
-.c.o:
-	$(CC) $(CFLAGS) $< -o $@
+build/%.o: %.c
+	$(CC) $(CFLAGS) -c $<  -o $@
 
 run: $(EXECUTABLE)
 	./$(EXECUTABLE)

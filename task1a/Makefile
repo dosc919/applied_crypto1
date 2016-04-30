@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-c -Wall
 LDFLAGS=
 SOURCES=des_test.c des.c
-OBJECTS=$(SOURCES:.c=.o)
+OBJECTS=build/$(SOURCES:.c=.o)
 EXECUTABLE=build/des_test
 
 all: run
@@ -11,7 +11,7 @@ all: run
 $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
 
-.c.o:
+build/%.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
 
 run: $(EXECUTABLE)
