@@ -38,8 +38,16 @@ void aes_decrypt(const BYTE in[],             // 16 bytes of ciphertext
                  const WORD key[],            // From the key setup
                  int keysize);                // Bit length of the key, 128, 192, or 256
 
+void AddRoundKey(BYTE state[][4], const WORD w[]);
+
+void ShiftRows(BYTE state[][4]);
 void InvShiftRows(BYTE state[][4]);
+
+void SubBytes(BYTE state[][4]);
 void InvSubBytes(BYTE state[][4]);
+
+void MixColumns(BYTE state[][4]);
+void InvMixColumns(BYTE state[][4]);
 WORD SubWord(WORD word);
 
 

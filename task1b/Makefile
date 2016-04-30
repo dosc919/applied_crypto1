@@ -1,9 +1,9 @@
 CC=gcc
 CFLAGS=-c -Wall
 LDFLAGS=
-SOURCES=aes.c aes_test.c
+SOURCES=aes.c aes_square.c
 OBJECTS=$(SOURCES:.c=.o)
-EXECUTABLE=build/aes_test
+EXECUTABLE=build/aes_square
 
 all: run
 	$(SOURCES) $(EXECUTABLE)
