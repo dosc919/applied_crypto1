@@ -49,6 +49,9 @@ This file uses UTF-8 encoding, as some comments use Greek letters.
 ================================================================
 */
 
+#include <stdio.h>
+#include <string.h>
+
 /**
   * Function to compute the Keccak[r, c] sponge function over a given input.
   * @param  rate            The value of the rate r.
@@ -119,6 +122,12 @@ void FIPS202_SHA3_384(const unsigned char *input, unsigned int inputByteLen, uns
 void FIPS202_SHA3_512(const unsigned char *input, unsigned int inputByteLen, unsigned char *output)
 {
     Keccak(576, 1024, input, inputByteLen, 0x06, output, 64);
+}
+
+//Function of the cube attack
+void Keccak_MAC_128(const unsigned char* input, unsigned int inputByteLen, unsigned char* output)
+{
+	Keccak(1024, 576, input, inputByteLen, 0x01, output, 16);
 }
 
 /*
@@ -216,7 +225,7 @@ void KeccakF1600_StatePermute(void *state)
     unsigned int round, x, y, j, t;
     UINT8 LFSRstate = 0x01;
 
-    for(round=0; round<24; round++) {
+    for(round=0; round<1; round++) {
         {   // === θ step (see [Keccak Reference, Section 2.3.2]) ===
             tKeccakLane C[5], D;
 
@@ -279,7 +288,6 @@ that use the Keccak-f[1600] permutation.
 ================================================================
 */
 
-#include <string.h>
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 void Keccak(unsigned int rate, unsigned int capacity, const unsigned char *input, unsigned long long int inputByteLen, unsigned char delimitedSuffix, unsigned char *output, unsigned long long int outputByteLen)
@@ -331,3 +339,39 @@ void Keccak(unsigned int rate, unsigned int capacity, const unsigned char *input
             KeccakF1600_StatePermute(state);
     }
 }
+
+int main()
+{
+	unsigned char message[112]; //896 bit message
+	unsigned char key[16]; //128 bit key
+	message = {0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
+			0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
+			0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
+			0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01};
+	key = {0xA3, 0xBB, 0x45, 0x70, 0x91, 0x96, 0xC4, 0x1A, 0x5F, 0xFF, 0x66, 0xD3, 0xBC, 0xF8, 0x90, 0x73};
+	unsigned char input[128];
+	unsigned char output[16];
+
+	int i;
+	//forging input (K||M)
+	for(i = 0; i < 128; i++)
+	{
+		if(i < 16)
+			input[i] = key[i];
+		else
+			input[i] = message[i-16];
+	}
+
+	printf("Starting 4 round attack on keccak...\n");
+    Keccak_MAC_128(input, 128, output);
+
+    printf("Tag: ");
+    for(i = 0; i < 16; i++)
+    {
+    	printf("%08X ", output[i]);
+    }
+    printf("\n");
+
+	return(0);
+}
+
