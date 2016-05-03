@@ -313,7 +313,7 @@ int main()
     printf("Starting 4 round attack on keccak...\n");
     //offline phase
     /*
-     * define cubes - send them through the
+     * define cubes - send them through the simulation of f (with known key)
      * compute superpolys and test them on linearity and constant
      * gather ~120 linear independend superpolys
      */
