@@ -19,5 +19,9 @@ run: $(EXECUTABLE)
 
 .PHONY: all run
 
+easy:
+	$(CC) -Wall $(SOURCES) -o $(EXECUTABLE)
+	./$(EXECUTABLE)
+
 clean:
 	rm -rf $(EXECUTABLE) $(OBJECTS)
