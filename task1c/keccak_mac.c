@@ -276,7 +276,7 @@ void Keccak(unsigned int rate, unsigned int capacity, const unsigned char *input
             blockSize = 0;
         }
     }
-
+/*
     // === Do the padding and switch to the squeezing phase ===
     // Absorb the last few bits and add the first bit of padding (which coincides with the delimiter in delimitedSuffix)
     state[blockSize] ^= delimitedSuffix;
@@ -287,7 +287,7 @@ void Keccak(unsigned int rate, unsigned int capacity, const unsigned char *input
     state[rateInBytes-1] ^= 0x80;
     // Switch to the squeezing phase
     KeccakF1600_StatePermute(state,rounds);
-
+*/
 
     // === Squeeze out all the output blocks ===
     while(outputByteLen > 0) {
@@ -494,6 +494,7 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 		for(i = 0; i < k; i++)
 		{
 			cube[i] = rand() % public_vars;
+			//cube[i] = 128;
 			//be sure that no indizes are double in the I - Set
 			while(unique == 0)
 			{
@@ -532,7 +533,7 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 
 int main()
 {
-	int rounds = 4; //TODO 4 rounds
+	int rounds = 1; //TODO 4 rounds
 	int wanted_number_of_superpolys = 1;
     //test_keccak_mac(rounds);
     printf("Starting %d round attack on keccak...\n",rounds);
