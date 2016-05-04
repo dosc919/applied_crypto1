@@ -355,55 +355,15 @@ void compute_sum(int bytes, int cube[], int cube_vars, unsigned char key[16], un
 	}
 }
 
-int compare_sums(const unsigned char sum1[], const unsigned char sum2[])
+ void xor_sums(unsigned char sum1[], const unsigned char sum2[])
 {
 	int i;
-	int equal = 1;
 	for(i = 0; i<16; i++)
 	{
-		if(sum1[i] != sum2[i])
-			equal = 0;
+		sum1[i] ^= sum2[i];
 	}
-	return equal;
 }
 
-int compute_coefficients(unsigned char comp_value[], int bytes, int cube[], int cube_variables, unsigned char coefficients[], int rounds)
-{
-	int number_of_coefficients = 128;
-	unsigned char key[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-	unsigned char key_temp[16];
-	unsigned char sum_for_coefficient[16];
-	int i,j,equal;
-	int found_some_coeffs = 0;
-	for(i = 0; i < number_of_coefficients; i++)
-	{
-		for(j = 0; j < 16; j++)
-		{
-			key_temp[j] = 0x00;
-		}
-		//set only one bit to 1 to get the value for this coefficient
-		key_temp[i/8] = key[i/8] | (1 << (i%8));
-		compute_sum(bytes,cube, cube_variables, key_temp, sum_for_coefficient, rounds);
-		equal = compare_sums(sum_for_coefficient, comp_value);
-		//if the sum for a coefficient differs from the sum of the constant coefficient c0, then it is present
-		if(equal==0)
-		{
-			//printf("Coefficient %d is present\n", i);
-			coefficients[i] = 0x01;
-		}
-	}
-	for(i = 0; i<number_of_coefficients; i++)
-	{
-		//if only one coefficient is present, the superpoly is not constant
-		if(sum_for_coefficient[i] != 0x00)
-		{
-			found_some_coeffs = 1;
-			break;
-		}
-	}
-
-	return found_some_coeffs;
-}
 
 int check_if_nonlinear()
 {
@@ -416,23 +376,37 @@ int check_if_nonlinear()
  * Returns 0 if the superpoly is constant.
  * Returns -1 if the superpoly is non-linear.
  */
-int superpoly_for_cube(int bits, int cube[], int cube_vars, BYTE coefficients[], int rounds)
+BYTE superpoly_for_cube(int bits, int cube[], int cube_vars, BYTE coefficients[][16], int rounds)
 {
+	int number_of_coefficients = 128;
 	BYTE key[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-	BYTE sum_with_0key[16];
-	int i;
+	BYTE key_temp[16];
+	BYTE coefficient_found = 0;
 
-	int is_constant = 0;
-	int is_nonlinear = 0;
-	int bytes = bits/8;
-	compute_sum(bytes, cube, cube_vars, key, sum_with_0key, rounds);
-	is_constant = compute_coefficients(sum_with_0key, bytes, cube, cube_vars, coefficients,rounds);
-	if(is_constant == 0)
-		return 0;
-	is_nonlinear = check_if_nonlinear();
-	if(is_nonlinear == 0)
-		return -1;
-	return 1;
+	compute_sum(bits/8, cube, cube_vars,key, coefficients[0], rounds);
+	int i,j;
+
+	for(i = 0; i < number_of_coefficients; i++)
+	{
+		memset(key_temp, 0, sizeof(key_temp));
+		//set only one bit to 1 to get the value for this coefficient
+		key_temp[i/8] = key[i/8] | (1 << (i%8));
+		compute_sum(bits/8,cube, cube_vars, key_temp, coefficients[i+1], rounds);
+		xor_sums(coefficients[i+1], coefficients[0]);
+	}
+	//if only one coefficient is present, the superpoly is not constant
+	for(i = 0; i<16; i++)
+	{
+		for(j = 0; j < number_of_coefficients; j++)
+		{
+			coefficient_found |= coefficients[j+1][i];
+		}
+		if(coefficient_found > 0)
+			return 1;
+
+	}
+
+	return coefficient_found;
 }
 
 void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_superpolys, int rounds)
@@ -449,7 +423,7 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 	{
 		//choose a subset I of k public variables
 		int cube[k];
-		BYTE poly_coefficients[128] = {0};
+		BYTE poly_coefficients[129][16] = {0};
 		//create I - Set
 		//printf("I-Set: ");
 		for(i = 0; i < k; i++)
@@ -474,28 +448,34 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 		}
 		//printf("\n");
 		//compute pI
-		int result = superpoly_for_cube(public_vars, cube, k, poly_coefficients, rounds);
+		BYTE result = superpoly_for_cube(public_vars, cube, k, poly_coefficients, rounds);
 		if(result == 0)
 		{
 			printf("superpoly is constant! Remove a variable from the cube!\n");
 			//superpoly was constant
 			//todo: remove a cube variable and try again
 		}
-		if(result == -1)
-		{
-			printf("superpoly is non-linear! add a variable to the cube!\n");
-			//superpoly was non-linear
-		}
 		//if the superpoly is linear and the coefficients are computed, result is 1
 		if(result == 1)
+		{
 			found_linear_superpolys++;
+			for(i = 0; i < 128; ++i)
+			{
+				for(j = 0; j < 16; ++j)
+				{
+					if(poly_coefficients[i][j])
+						printf("coeff: %X row: %d, position: %d\n", poly_coefficients[i][j], j, i);
+				}
+			}
+		}
+
 	}
 }
 
 int main()
 {
-	int rounds = 1; //TODO 4 rounds
-	int wanted_number_of_superpolys = 140;
+	int rounds = 4; //TODO 4 rounds
+	int wanted_number_of_superpolys = 1;
     //test_keccak_mac(rounds);
     printf("Starting %d round attack on keccak...\n",rounds);
     //offline phase
