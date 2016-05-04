@@ -53,6 +53,8 @@ This file uses UTF-8 encoding, as some comments use Greek letters.
 #include <string.h>
 #include <stdlib.h>
 
+
+
 typedef unsigned char BYTE;
 
 /**
@@ -64,15 +66,28 @@ typedef unsigned char BYTE;
   * @param  output          Pointer to the buffer where to store the output.
   * @param  outputByteLen   The number of output bytes desired.
   * @param  rounds			The number of rounds performed by the f1600 function.
+  * @param  delimitedSuffix Bits that will be automatically appended to the end
+  *                         of the input message, as in domain separation.
+  *                         This is a byte containing from 0 to 7 bits
+  *                         These <i>n</i> bits must be in the least significant bit positions
+  *                         and must be delimited with a bit 1 at position <i>n</i>
+  *                         (counting from 0=LSB to 7=MSB) and followed by bits 0
+  *                         from position <i>n</i>+1 to position 7.
+  *                         Some examples:
+  *                             - If no bits are to be appended, then @a delimitedSuffix must be 0x01.
+  *                             - If the 2-bit sequence 0,1 is to be appended (as for SHA3-*), @a delimitedSuffix must be 0x06.
+  *                             - If the 4-bit sequence 1,1,1,1 is to be appended (as for SHAKE*), @a delimitedSuffix must be 0x1F.
+  *                             - If the 7-bit sequence 1,1,0,1,0,0,0 is to be absorbed, @a delimitedSuffix must be 0x8B.
+
   * @pre    One must have r+c=1600 and the rate a multiple of 8 bits in this implementation.
   */
-void Keccak(unsigned int rate, unsigned int capacity, const unsigned char *input, unsigned long long int inputByteLen, unsigned char *output, unsigned long long int outputByteLen, int rounds);
+void Keccak(unsigned int rate, unsigned int capacity, const unsigned char *input, unsigned long long int inputByteLen,unsigned char delimitedSuffix, unsigned char *output, unsigned long long int outputByteLen, int rounds);
 
 
 //Function of the cube attack
 void Keccak_MAC_128(const unsigned char* input, unsigned int inputByteLen, unsigned char* output, int rounds)
 {
-	Keccak(1024, 576, input, inputByteLen, output, 16, rounds);
+	Keccak(1024, 576, input, inputByteLen, 0x01, output, 16, rounds);
 }
 
 /*
@@ -235,7 +250,7 @@ that use the Keccak-f[1600] permutation.
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-void Keccak(unsigned int rate, unsigned int capacity, const unsigned char *input, unsigned long long int inputByteLen, unsigned char *output, unsigned long long int outputByteLen, int rounds)
+void Keccak(unsigned int rate, unsigned int capacity, const unsigned char *input, unsigned long long int inputByteLen, unsigned char delimitedSuffix, unsigned char *output, unsigned long long int outputByteLen, int rounds)
 {
     UINT8 state[200];
     unsigned int rateInBytes = rate/8;
@@ -262,8 +277,17 @@ void Keccak(unsigned int rate, unsigned int capacity, const unsigned char *input
         }
     }
 
-    // === Do the switch to the squeezing phase ===
-    KeccakF1600_StatePermute(state, rounds);
+    // === Do the padding and switch to the squeezing phase ===
+    // Absorb the last few bits and add the first bit of padding (which coincides with the delimiter in delimitedSuffix)
+    state[blockSize] ^= delimitedSuffix;
+    // If the first bit of padding is at position rate-1, we need a whole new block for the second bit of padding
+    if (((delimitedSuffix & 0x80) != 0) && (blockSize == (rateInBytes-1)))
+         KeccakF1600_StatePermute(state, rounds);
+    // Add the second bit of padding
+    state[rateInBytes-1] ^= 0x80;
+    // Switch to the squeezing phase
+    KeccakF1600_StatePermute(state,rounds);
+
 
     // === Squeeze out all the output blocks ===
     while(outputByteLen > 0) {
