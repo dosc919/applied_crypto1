@@ -53,6 +53,8 @@ This file uses UTF-8 encoding, as some comments use Greek letters.
 #include <string.h>
 #include <stdlib.h>
 
+typedef unsigned char BYTE;
+
 /**
   * Function to compute the Keccak[r, c] sponge function over a given input.
   * @param  rate            The value of the rate r.
@@ -285,7 +287,7 @@ void test_keccak_mac(int rounds)
 	//128 bit key
 	unsigned char key[16] = {0xA3, 0xBB, 0x45, 0x70, 0x91, 0x96, 0xC4, 0x1A, 0x5F, 0xFF, 0x66, 0xD3, 0xBC, 0xF8, 0x90, 0x73};
 	unsigned char input[128];
-	unsigned char output[16];
+	BYTE output[16];
 	int i;
 	//forging input (K||M)
 	for(i = 0; i < 128; i++)
@@ -310,30 +312,30 @@ void test_keccak_mac(int rounds)
 void compute_sum(int bytes, int cube[], int cube_vars, unsigned char key[16], unsigned char final_sum[16], int rounds)
 {
 	//todo: our sum has 128bit output, the paper only shows 1bit output, so maybe the equations are wrong...
-	unsigned char output[16];
-	unsigned char input[128];
-	unsigned char message[bytes];
+	BYTE output[16];
+	BYTE input[128];
+	BYTE message[bytes];
 	int i,j;
-	char cube_var_value;
+	BYTE cube_var_value;
 	int bits_for_cubevars = 0; //used to iterate over all possible combinations of the cube variables. bits 0 - k are the values for the variables
-	int equations = 2 << (cube_vars-1);
+	int equations = 2 << (cube_vars - 1);
 	//initialize the output_sum with 0
 	for(i = 0; i < 16; i++)
 	{
 		final_sum[i] = 0x00;
 	}
 	//set all message bits to 0
-	for(i = 0; i<bytes; i++)
+	for(i = 0; i < bytes; i++)
 	{
 		message[i] = 0x00;
 	}
-	for(i = 0; i<equations; i++)
+	for(i = 0; i < equations; i++)
 	{
 		//iterate the cube variables
 		for(j = 0; j < cube_vars; j++)
 		{
 			cube_var_value = (bits_for_cubevars >> (cube_vars - j - 1)) & 0x0001;
-			message[(bytes-1) - (cube[j]/8)] |= (cube_var_value<<(cube[j]%8));
+			message[(cube[j] / 8)] |= (cube_var_value << (cube[j] % 8));
 		}
 		//forge the input
 		for(j = 0; j < 128; j++)
@@ -380,7 +382,7 @@ int compute_coefficients(unsigned char comp_value[], int bytes, int cube[], int 
 			key_temp[j] = 0x00;
 		}
 		//set only one bit to 1 to get the value for this coefficient
-		key_temp[15 - i/8] = key[15 - i/8] | (1 << (i%8));
+		key_temp[i/8] = key[i/8] | (1 << (i%8));
 		compute_sum(bytes,cube, cube_variables, key_temp, sum_for_coefficient, rounds);
 		equal = compare_sums(sum_for_coefficient, comp_value);
 		//if the sum for a coefficient differs from the sum of the constant coefficient c0, then it is present
@@ -414,16 +416,12 @@ int check_if_nonlinear()
  * Returns 0 if the superpoly is constant.
  * Returns -1 if the superpoly is non-linear.
  */
-int superpoly_for_cube(int bits, int cube[], int cube_vars, unsigned char coefficients[], int rounds)
+int superpoly_for_cube(int bits, int cube[], int cube_vars, BYTE coefficients[], int rounds)
 {
-	unsigned char key[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-	unsigned char sum_with_0key[16];
+	BYTE key[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+	BYTE sum_with_0key[16];
 	int i;
-	//initialize all coefficients to non-present
-	for(i = 0; i<128;i++)
-	{
-		coefficients[i] = 0x00;
-	}
+
 	int is_constant = 0;
 	int is_nonlinear = 0;
 	int bytes = bits/8;
@@ -450,25 +448,25 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 	while(found_linear_superpolys <= wanted_number_of_superpolys)
 	{
 		//choose a subset I of k public variables
-		int I[k];
-		unsigned char poly_coefficients[128];
+		int cube[k];
+		BYTE poly_coefficients[128] = {0};
 		//create I - Set
 		//printf("I-Set: ");
 		for(i = 0; i < k; i++)
 		{
-			I[i] = rand() % public_vars;
+			cube[i] = rand() % public_vars;
 			//be sure that no indizes are double in the I - Set
 			while(unique == 0)
 			{
 				unique = 1;
-				for(j = i-1; j >= 0; j--)
+				for(j = i - 1; j >= 0; j--)
 				{
-					if(I[i] == I[j])
+					if(cube[i] == cube[j])
 						unique = 0;
 				}
 				if(unique == 0)
 				{
-					I[i] = rand() % public_vars;
+					cube[i] = rand() % public_vars;
 				}
 			}
 			unique = 0;
@@ -476,7 +474,7 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 		}
 		//printf("\n");
 		//compute pI
-		int result = superpoly_for_cube(public_vars, I, k, poly_coefficients, rounds);
+		int result = superpoly_for_cube(public_vars, cube, k, poly_coefficients, rounds);
 		if(result == 0)
 		{
 			printf("superpoly is constant! Remove a variable from the cube!\n");
@@ -496,8 +494,8 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 
 int main()
 {
-	int rounds = 1;
-	int wanted_number_of_superpolys = 12; //todo change to 120
+	int rounds = 1; //TODO 4 rounds
+	int wanted_number_of_superpolys = 140;
     //test_keccak_mac(rounds);
     printf("Starting %d round attack on keccak...\n",rounds);
     //offline phase
