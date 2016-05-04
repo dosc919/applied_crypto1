@@ -280,13 +280,13 @@ void Keccak(unsigned int rate, unsigned int capacity, const unsigned char *input
 void test_keccak_mac(int rounds)
 {
 	//896 bit message
-	unsigned char message[112] = {0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
+	BYTE message[112] = {0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
 				0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
 				0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
 				0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01};
 	//128 bit key
-	unsigned char key[16] = {0xA3, 0xBB, 0x45, 0x70, 0x91, 0x96, 0xC4, 0x1A, 0x5F, 0xFF, 0x66, 0xD3, 0xBC, 0xF8, 0x90, 0x73};
-	unsigned char input[128];
+	BYTE key[16] = {0xA3, 0xBB, 0x45, 0x70, 0x91, 0x96, 0xC4, 0x1A, 0x5F, 0xFF, 0x66, 0xD3, 0xBC, 0xF8, 0x90, 0x73};
+	BYTE input[128];
 	BYTE output[16];
 	int i;
 	//forging input (K||M)
@@ -309,9 +309,8 @@ void test_keccak_mac(int rounds)
 
 }
 
-void compute_sum(int bytes, int cube[], int cube_vars, unsigned char key[16], unsigned char final_sum[16], int rounds)
+void compute_sum(int bytes, int cube[], int cube_vars, BYTE key[16], BYTE final_sum[16], int rounds)
 {
-	//todo: our sum has 128bit output, the paper only shows 1bit output, so maybe the equations are wrong...
 	BYTE output[16];
 	BYTE input[128];
 	BYTE message[bytes];
@@ -324,13 +323,13 @@ void compute_sum(int bytes, int cube[], int cube_vars, unsigned char key[16], un
 	{
 		final_sum[i] = 0x00;
 	}
-	//set all message bits to 0
-	for(i = 0; i < bytes; i++)
-	{
-		message[i] = 0x00;
-	}
 	for(i = 0; i < equations; i++)
 	{
+		//set all message bits to 0
+		for(j = 0; j < bytes; j++)
+		{
+			message[j] = 0x00;
+		}
 		//iterate the cube variables
 		for(j = 0; j < cube_vars; j++)
 		{
@@ -345,6 +344,7 @@ void compute_sum(int bytes, int cube[], int cube_vars, unsigned char key[16], un
 			else
 				input[j] = message[j-16];
 		}
+		//printf("Input block: %02X %02X %02X\n", input[0], input[1], input[2]);
 		Keccak_MAC_128(input, 128, output, rounds);
 		//XORing all partial outputs together to get the final output
 		for(j = 0; j < 16; j++)
@@ -355,7 +355,7 @@ void compute_sum(int bytes, int cube[], int cube_vars, unsigned char key[16], un
 	}
 }
 
- void xor_sums(unsigned char sum1[], const unsigned char sum2[])
+ void xor_sums(BYTE sum1[16], const BYTE sum2[16])
 {
 	int i;
 	for(i = 0; i<16; i++)
@@ -369,6 +369,42 @@ int check_if_nonlinear()
 {
 	//todo: implement the non-linearity check
 	return 1;
+}
+
+void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars)
+{
+	int i,j,k;
+    printf("Cube: ");
+    for(i = 0; i<cube_vars; i++)
+    {
+    	printf("%d ", cube[i]);
+    }
+    printf("\n");
+	printf("\t\t\t\tSuperpolys: yi = c0 -- c128\n\n");
+	//rows
+	for(i = 0; i < 128; ++i)
+	{
+		//coefficients
+		for(j = 0; j < 128; ++j)
+		{
+			BYTE coefficient = (coefficients[j+1][i/8] >> (i%8)) & 0x01;
+			if(coefficient != 0)
+			{
+				printf("y%d:\t", i);
+				for(k = 0; k < 129; k++)
+				{
+					if(k == 64)
+						printf("\n\t");
+					if(((k % 8) == 0)&&(k!=0))
+						printf(" ");
+					printf("%01X", (coefficients[k][i/8] >> (i%8) ) &0x01);
+				}
+				printf("\n");
+				break;
+			}
+		}
+	}
+
 }
 
 /**
@@ -391,6 +427,12 @@ BYTE superpoly_for_cube(int bits, int cube[], int cube_vars, BYTE coefficients[]
 		memset(key_temp, 0, sizeof(key_temp));
 		//set only one bit to 1 to get the value for this coefficient
 		key_temp[i/8] = key[i/8] | (1 << (i%8));
+		/*printf("KEY: ");
+		for(j = 0; j<128; j++)
+		{
+			printf("%01X", (key_temp[j/8] >> (7-(j%8)))&0x01);
+		}
+		printf("\n");*/
 		compute_sum(bits/8,cube, cube_vars, key_temp, coefficients[i+1], rounds);
 		xor_sums(coefficients[i+1], coefficients[0]);
 	}
@@ -403,7 +445,6 @@ BYTE superpoly_for_cube(int bits, int cube[], int cube_vars, BYTE coefficients[]
 		}
 		if(coefficient_found > 0)
 			return 1;
-
 	}
 
 	return coefficient_found;
@@ -418,8 +459,8 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 	int unique = 0;
 	srand(210);
 
-	//find ~120 linear independent superpolys
-	while(found_linear_superpolys <= wanted_number_of_superpolys)
+	//find ~140 linear independent superpolys
+	while(found_linear_superpolys < wanted_number_of_superpolys)
 	{
 		//choose a subset I of k public variables
 		int cube[k];
@@ -459,14 +500,7 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 		if(result == 1)
 		{
 			found_linear_superpolys++;
-			for(i = 0; i < 128; ++i)
-			{
-				for(j = 0; j < 16; ++j)
-				{
-					if(poly_coefficients[i][j])
-						printf("coeff: %X row: %d, position: %d\n", poly_coefficients[i][j], j, i);
-				}
-			}
+			print_nonzero_superpolys(poly_coefficients, cube, k);
 		}
 
 	}
