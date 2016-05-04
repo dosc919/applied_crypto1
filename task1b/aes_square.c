@@ -213,7 +213,7 @@ int do5RoundAttack()
 			//for all lambda sets
 			for(l = 0; l < 5; ++l)
 			{
-				//calculate state of round4
+				//calculate backwards to state of round4
 				for(k = 0; k < 256; ++k)
 				{
 					copyLambdaToState(lambda_enc[l][k], lambda_r4[l][k]);
