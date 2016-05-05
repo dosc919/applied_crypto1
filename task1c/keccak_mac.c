@@ -425,7 +425,7 @@ void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars
     	printf("%d ", cube[i]);
     }
     printf("\n");
-	printf("\t\tSuperpolys: \n");
+	printf("\tSuperpolys: \n");
 	//rows
 	for(i = 0; i < 128; ++i)
 	{
@@ -439,8 +439,18 @@ void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars
 				for(k = 0; k < 129; k++)
 				{
 					BYTE helper = (coefficients[k][i/8] >> (i%8) ) &0x01;
-					if(helper == 1)
-						printf("K%3d ", k);
+					if(k==0)
+					{
+						if(helper == 1)
+							printf("1");
+						else
+							printf("0");
+					}
+					if((helper == 1) && (k != 0))
+					{
+						printf(" ^ K%d", k);
+					}
+
 				}
 				printf(" = %01X", (rhs[i/8] >> (i%8))&0x01);
 				printf("\n");
@@ -448,6 +458,7 @@ void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars
 			}
 		}
 	}
+	printf("\n");
 
 }
 
