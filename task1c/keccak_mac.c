@@ -446,7 +446,7 @@ void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars
 						else
 							printf("0");
 					}
-					if(helper == 1)
+					if((helper == 1) && (k != 0))
 					{
 						printf(" ^ K%d", k);
 					}
