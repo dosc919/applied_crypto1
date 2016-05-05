@@ -411,11 +411,11 @@ int check_if_nonlinear(BYTE coefficients[][16], int bytes, int cube[], int cube_
 		tmp_key[i][0] = 1;
 		tmp_key[i][0] |= 1 << (i + 2);
 		compute_sum(bytes,cube, cube_vars, tmp_key[i], rhs[i], rounds);
-		printf("%x", tmp_key[i][0]);
+		//printf("%x", tmp_key[i][0]);
 	}
 
 	//check if equal
-	return !memcmp(lhs, rhs, 5 * 16);
+	return memcmp(lhs, rhs, 5 * 16);
 }
 
 void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars)
@@ -511,10 +511,18 @@ BYTE superpoly_for_cube(int bits, int cube[], int cube_vars, BYTE coefficients[]
 			coefficient_found |= coefficients[j+1][i];
 		}
 		if(coefficient_found > 0)
-			return 1;
+		{
+			int non_linear = 0;
+			non_linear = check_if_nonlinear(coefficients,bits/8,cube,cube_vars,rounds);
+			//if the poly is non-linear, non_linear is 1
+			if(non_linear == 0)
+				return 1;
+			else
+				return -1;
+		}
 	}
+	return 0;
 
-	return coefficient_found;
 }
 
 void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_superpolys, int rounds)
@@ -593,7 +601,7 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 int main()
 {
 	int rounds = 4; //TODO 4 rounds
-	int wanted_number_of_superpolys = 2;
+	int wanted_number_of_superpolys = 12;
     //test_keccak_mac(rounds);
     printf("Starting %d round attack on keccak...\n",rounds);
     //offline phase
