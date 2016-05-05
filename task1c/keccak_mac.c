@@ -389,10 +389,33 @@ void compute_sum(int bytes, int cube[], int cube_vars, BYTE key[16], BYTE final_
 }
 
 
-int check_if_nonlinear()
+int check_if_nonlinear(BYTE coefficients[][16], int bytes, int cube[], int cube_vars, int rounds)
 {
-	//todo: implement the non-linearity check
-	return 1;
+	BYTE tmp_key[5][16];
+	BYTE lhs[5][16]; //left hand side of linearity equation
+	BYTE rhs[5][16]; //right hand side ...
+	int i;
+	int j;
+
+	memset(tmp_key, 0, 5 * 16);
+
+	for(i = 0; i < 5; ++i)
+	{
+		//calculate lhs for 5 linearity equations
+		for(j = 0; j < 16; ++j)
+		{
+			lhs[i][j] = coefficients[0][j] ^ coefficients[1][j] ^ coefficients[i + 2][j];
+		}
+
+		//calculate rhs for 5 linearity equations
+		tmp_key[i][0] = 1;
+		tmp_key[i][0] |= 1 << (i + 2);
+		compute_sum(bytes,cube, cube_vars, tmp_key[i], rhs[i], rounds);
+		printf("%x", tmp_key[i][0]);
+	}
+
+	//check if equal
+	return !memcmp(lhs, rhs, 5 * 16);
 }
 
 void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars)
@@ -404,7 +427,7 @@ void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars
     	printf("%d ", cube[i]);
     }
     printf("\n");
-	printf("\t\t\t\tSuperpolys: yi = c0 -- c128\n\n");
+	printf("\t\t\tSuperpolys: yi = c0 -- c128\n");
 	//rows
 	for(i = 0; i < 128; ++i)
 	{
@@ -414,11 +437,9 @@ void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars
 			BYTE coefficient = (coefficients[j+1][i/8] >> (i%8)) & 0x01;
 			if(coefficient != 0)
 			{
-				printf("y%d:\t", i);
+				printf("y%3d:\t", i);
 				for(k = 0; k < 129; k++)
 				{
-					if(k == 64)
-						printf("\n\t");
 					if(((k % 8) == 0)&&(k!=0))
 						printf(" ");
 					printf("%01X", (coefficients[k][i/8] >> (i%8) ) &0x01);
