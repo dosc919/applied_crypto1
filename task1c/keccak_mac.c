@@ -416,7 +416,7 @@ int check_if_nonlinear(BYTE coefficients[][16], int bytes, int cube[], int cube_
 	return memcmp(lhs, rhs, NUM_LINEARITY_CHECKS * 16);
 }
 
-void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars)
+void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars, BYTE rhs[16])
 {
 	int i,j,k;
     printf("Cube: ");
@@ -442,6 +442,7 @@ void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars
 						printf(" ");
 					printf("%01X", (coefficients[k][i/8] >> (i%8) ) &0x01);
 				}
+				printf(" = %01X", (rhs[i/8] >> (i%8))&0x01);
 				printf("\n");
 				break;
 			}
@@ -523,11 +524,14 @@ BYTE superpoly_for_cube(int bits, int cube[], int cube_vars, BYTE coefficients[]
 
 }
 
+void compute_rhs(int bytes, int cube[], int cube_vars, BYTE rhs[16], int rounds)
+{
+	BYTE secretkey[16] = {0xA3, 0x48, 0x90, 0xB4, 0x56, 0xFF, 0x59, 0x27, 0xDD, 0xF5, 0x87, 0x00, 0xA0, 0xF4, 0x10, 0xBB};
+	compute_sum(bytes, cube, cube_vars, secretkey, rhs, rounds);
+}
+
 void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_superpolys, int rounds)
 {
-	int k = initial_degree_guess - 1;
-	if(k == 15)
-		k = 14;
 	int public_vars = 896;
 	int found_linear_superpolys = 0;
 	int i,j;
@@ -537,6 +541,9 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 	//find ~140 linear independent superpolys
 	while(found_linear_superpolys < wanted_number_of_superpolys)
 	{
+		int k = initial_degree_guess - 1;
+		if(k == 15)
+			k = 14;
 		//choose a subset I of k public variables
 		int cube[k];
 		BYTE poly_coefficients[129][16] = {0};
@@ -581,6 +588,7 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 				}
 				result = superpoly_for_cube(public_vars, cube_new, k_new, poly_coefficients, rounds);
 			}
+			k = k_new;
 		}
 		if(result == -1)
 		{
@@ -589,8 +597,11 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 		//if the superpoly is linear and the coefficients are computed, result is 1
 		if(result == 1)
 		{
+			BYTE rhs[16];
+			//compute rhs
+			compute_rhs(public_vars/8, cube, k, rhs, rounds);
 			found_linear_superpolys += count_equations(poly_coefficients);
-			print_nonzero_superpolys(poly_coefficients, cube, k);
+			print_nonzero_superpolys(poly_coefficients, cube, k, rhs);
 		}
 
 	}
@@ -600,6 +611,7 @@ int main()
 {
 	int rounds = 4; //TODO 4 rounds
 	int wanted_number_of_superpolys = 48;
+
     //test_keccak_mac(rounds);
     printf("Starting %d round attack on keccak...\n",rounds);
     //offline phase
