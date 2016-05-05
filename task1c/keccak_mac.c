@@ -56,6 +56,7 @@ This file uses UTF-8 encoding, as some comments use Greek letters.
 
 
 typedef unsigned char BYTE;
+#define NUM_LINEARITY_CHECKS 8
 
 /**
   * Function to compute the Keccak[r, c] sponge function over a given input.
@@ -391,31 +392,28 @@ void compute_sum(int bytes, int cube[], int cube_vars, BYTE key[16], BYTE final_
 
 int check_if_nonlinear(BYTE coefficients[][16], int bytes, int cube[], int cube_vars, int rounds)
 {
-	BYTE tmp_key[5][16];
-	BYTE lhs[5][16]; //left hand side of linearity equation
-	BYTE rhs[5][16]; //right hand side ...
+	BYTE tmp_key[16];
+	BYTE lhs[NUM_LINEARITY_CHECKS][16]; //left hand side of linearity equation
+	BYTE rhs[NUM_LINEARITY_CHECKS][16]; //right hand side ...
 	int i;
 	int j;
 
-	memset(tmp_key, 0, 5 * 16);
+	memset(tmp_key, 0, 16);
 
-	for(i = 0; i < 5; ++i)
+	for(i = 0; i < NUM_LINEARITY_CHECKS; ++i)
 	{
 		//calculate lhs for 5 linearity equations
 		for(j = 0; j < 16; ++j)
-		{
 			lhs[i][j] = coefficients[0][j] ^ coefficients[1][j] ^ coefficients[i + 2][j];
-		}
 
 		//calculate rhs for 5 linearity equations
-		tmp_key[i][0] = 1;
-		tmp_key[i][0] |= 1 << (i + 1);
-		compute_sum(bytes,cube, cube_vars, tmp_key[i], rhs[i], rounds);
-		//printf("%x", tmp_key[i][0]);
+		tmp_key[0] = 1;
+		tmp_key[0] |= 1 << (i + 1);
+		compute_sum(bytes,cube, cube_vars, tmp_key, rhs[i], rounds);
 	}
 
 	//check if equal
-	return memcmp(lhs, rhs, 5 * 16);
+	return memcmp(lhs, rhs, NUM_LINEARITY_CHECKS * 16);
 }
 
 void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars, BYTE rhs[16])
@@ -612,8 +610,10 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 
 int main()
 {
+
 	int rounds = 4;
 	int wanted_number_of_superpolys = 140;
+
     //test_keccak_mac(rounds);
     printf("Starting %d round attack on keccak...\n",rounds);
     //offline phase
