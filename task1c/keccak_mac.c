@@ -431,6 +431,28 @@ void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars
 
 }
 
+int count_equations(BYTE coefficients[][16])
+{
+	int usable_equations = 0;
+	int i,j;
+	//rows
+	for(i = 0; i < 128; ++i)
+	{
+		//coefficients
+		for(j = 0; j < 128; ++j)
+		{
+			BYTE coefficient = (coefficients[j+1][i/8] >> (i%8)) & 0x01;
+			if(coefficient != 0)
+			{
+				usable_equations += 1;
+				break;
+			}
+		}
+	}
+	//printf("Usable Equations: %d\n", usable_equations);
+	return usable_equations;
+}
+
 /**
  * Returns 1 if the cube leads to a linear superpoly.
  * Returns 0 if the superpoly is constant.
@@ -477,6 +499,8 @@ BYTE superpoly_for_cube(int bits, int cube[], int cube_vars, BYTE coefficients[]
 void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_superpolys, int rounds)
 {
 	int k = initial_degree_guess - 1;
+	if(k == 15)
+		k = 14;
 	int public_vars = 896;
 	int found_linear_superpolys = 0;
 	int i,j;
@@ -517,14 +541,28 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 		BYTE result = superpoly_for_cube(public_vars, cube, k, poly_coefficients, rounds);
 		if(result == 0)
 		{
-			printf("superpoly is constant! Remove a variable from the cube!\n");
+			int k_new = k;
+			//printf("superpoly is constant! Remove a variable from the cube!\n");
 			//superpoly was constant
-			//todo: remove a cube variable and try again
+			while((result == 0) && (k_new > 0))
+			{
+				k_new -= 1;
+				int cube_new[k_new];
+				for(i = 0; i<k_new; i++)
+				{
+					cube_new[i] = cube[i];
+				}
+				result = superpoly_for_cube(public_vars, cube_new, k_new, poly_coefficients, rounds);
+			}
+		}
+		if(result == -1)
+		{
+			printf("superpoly was non-linear! Try another cube\n");
 		}
 		//if the superpoly is linear and the coefficients are computed, result is 1
 		if(result == 1)
 		{
-			found_linear_superpolys++;
+			found_linear_superpolys += count_equations(poly_coefficients);
 			print_nonzero_superpolys(poly_coefficients, cube, k);
 		}
 
@@ -533,8 +571,8 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 
 int main()
 {
-	int rounds = 1; //TODO 4 rounds
-	int wanted_number_of_superpolys = 1;
+	int rounds = 4; //TODO 4 rounds
+	int wanted_number_of_superpolys = 2;
     //test_keccak_mac(rounds);
     printf("Starting %d round attack on keccak...\n",rounds);
     //offline phase
