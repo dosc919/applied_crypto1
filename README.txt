@@ -15,6 +15,7 @@ https://github.com/gvanas/KeccakCodePackage
 ###########################################
 #  Execute attacks
 ###########################################
+Compiler: gcc
 
 DES:
 make run
@@ -31,3 +32,18 @@ make run
   execute both attacks
 
 KECCACK:
+make run
+  execute 4 round attack (only offline)
+
+###########################################
+#  Additional notes
+###########################################
+
+DES:
+
+AES:
+  both attacks print successfull if the key was recovered
+  5 round attack takes appr. 1h
+
+KECCACK:
+  contradictions in the superpoly equations
