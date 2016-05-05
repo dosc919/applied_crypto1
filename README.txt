@@ -40,6 +40,7 @@ make run
 ###########################################
 
 DES:
+  8 round attack: successfully recovered secret key bits
 
 AES:
   both attacks print successfull if the key was recovered
