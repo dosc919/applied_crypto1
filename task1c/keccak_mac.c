@@ -391,27 +391,24 @@ void compute_sum(int bytes, int cube[], int cube_vars, BYTE key[16], BYTE final_
 
 int check_if_nonlinear(BYTE coefficients[][16], int bytes, int cube[], int cube_vars, int rounds)
 {
-	BYTE tmp_key[5][16];
+	BYTE tmp_key[16];
 	BYTE lhs[5][16]; //left hand side of linearity equation
 	BYTE rhs[5][16]; //right hand side ...
 	int i;
 	int j;
 
-	memset(tmp_key, 0, 5 * 16);
+	memset(tmp_key, 0, 16);
 
 	for(i = 0; i < 5; ++i)
 	{
 		//calculate lhs for 5 linearity equations
 		for(j = 0; j < 16; ++j)
-		{
 			lhs[i][j] = coefficients[0][j] ^ coefficients[1][j] ^ coefficients[i + 2][j];
-		}
 
 		//calculate rhs for 5 linearity equations
-		tmp_key[i][0] = 1;
-		tmp_key[i][0] |= 1 << (i + 2);
-		compute_sum(bytes,cube, cube_vars, tmp_key[i], rhs[i], rounds);
-		//printf("%x", tmp_key[i][0]);
+		tmp_key[0] = 1;
+		tmp_key[0] |= 1 << (i + 1);
+		compute_sum(bytes,cube, cube_vars, tmp_key, rhs[i], rounds);
 	}
 
 	//check if equal
@@ -601,7 +598,7 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 int main()
 {
 	int rounds = 4; //TODO 4 rounds
-	int wanted_number_of_superpolys = 12;
+	int wanted_number_of_superpolys = 48;
     //test_keccak_mac(rounds);
     printf("Starting %d round attack on keccak...\n",rounds);
     //offline phase
