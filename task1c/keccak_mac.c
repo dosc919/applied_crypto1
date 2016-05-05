@@ -427,7 +427,7 @@ void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars
     	printf("%d ", cube[i]);
     }
     printf("\n");
-	printf("\t\t\tSuperpolys: yi = c0 -- c128\n");
+	printf("\t\tSuperpolys: \n");
 	//rows
 	for(i = 0; i < 128; ++i)
 	{
@@ -440,9 +440,9 @@ void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars
 				printf("y%3d:\t", i);
 				for(k = 0; k < 129; k++)
 				{
-					if(((k % 8) == 0)&&(k!=0))
-						printf(" ");
-					printf("%01X", (coefficients[k][i/8] >> (i%8) ) &0x01);
+					BYTE helper = (coefficients[k][i/8] >> (i%8) ) &0x01;
+					if(helper == 1)
+						printf("K%3d ", k);
 				}
 				printf(" = %01X", (rhs[i/8] >> (i%8))&0x01);
 				printf("\n");
@@ -480,7 +480,7 @@ int count_equations(BYTE coefficients[][16])
  * Returns 0 if the superpoly is constant.
  * Returns -1 if the superpoly is non-linear.
  */
-BYTE superpoly_for_cube(int bits, int cube[], int cube_vars, BYTE coefficients[][16], int rounds)
+int superpoly_for_cube(int bits, int cube[], int cube_vars, BYTE coefficients[][16], int rounds)
 {
 	int number_of_coefficients = 128;
 	BYTE key[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
@@ -538,7 +538,7 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 	int found_linear_superpolys = 0;
 	int i,j;
 	int unique = 0;
-	srand(210);
+	srand(1337);
 
 	//find ~140 linear independent superpolys
 	while(found_linear_superpolys < wanted_number_of_superpolys)
@@ -574,7 +574,7 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 		}
 		//printf("\n");
 		//compute pI
-		BYTE result = superpoly_for_cube(public_vars, cube, k, poly_coefficients, rounds);
+		int result = superpoly_for_cube(public_vars, cube, k, poly_coefficients, rounds);
 		if(result == 0)
 		{
 			int k_new = k;
@@ -582,6 +582,7 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 			//superpoly was constant
 			while((result == 0) && (k_new > 0))
 			{
+				memset(poly_coefficients, 0, sizeof(poly_coefficients));
 				k_new -= 1;
 				int cube_new[k_new];
 				for(i = 0; i<k_new; i++)
@@ -612,7 +613,7 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 int main()
 {
 	int rounds = 4;
-	int wanted_number_of_superpolys = 51;
+	int wanted_number_of_superpolys = 140;
     //test_keccak_mac(rounds);
     printf("Starting %d round attack on keccak...\n",rounds);
     //offline phase
@@ -621,15 +622,15 @@ int main()
      * compute superpolys and test them on linearity and constant
      * gather ~120 linear independend superpolys
      */
-    int degree_guess = 2 << (rounds-1);
-    search_maxterms_superpolys(degree_guess, wanted_number_of_superpolys, rounds);
-
     //online phase
     /* send cubes through the oracle with the unknown key
      * find the values to the superpolys (the sums over the cube variables)
      * solve the linear equation system
      * bruteforce the remaining unknown key bits
      */
+    int degree_guess = 2 << (rounds-1);
+    search_maxterms_superpolys(degree_guess, wanted_number_of_superpolys, rounds);
+
 	return(0);
 }
 
