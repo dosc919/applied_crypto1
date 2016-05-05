@@ -56,6 +56,7 @@ This file uses UTF-8 encoding, as some comments use Greek letters.
 
 
 typedef unsigned char BYTE;
+#define NUM_LINEARITY_CHECKS 8
 
 /**
   * Function to compute the Keccak[r, c] sponge function over a given input.
@@ -392,14 +393,14 @@ void compute_sum(int bytes, int cube[], int cube_vars, BYTE key[16], BYTE final_
 int check_if_nonlinear(BYTE coefficients[][16], int bytes, int cube[], int cube_vars, int rounds)
 {
 	BYTE tmp_key[16];
-	BYTE lhs[5][16]; //left hand side of linearity equation
-	BYTE rhs[5][16]; //right hand side ...
+	BYTE lhs[NUM_LINEARITY_CHECKS][16]; //left hand side of linearity equation
+	BYTE rhs[NUM_LINEARITY_CHECKS][16]; //right hand side ...
 	int i;
 	int j;
 
 	memset(tmp_key, 0, 16);
 
-	for(i = 0; i < 5; ++i)
+	for(i = 0; i < NUM_LINEARITY_CHECKS; ++i)
 	{
 		//calculate lhs for 5 linearity equations
 		for(j = 0; j < 16; ++j)
@@ -412,7 +413,7 @@ int check_if_nonlinear(BYTE coefficients[][16], int bytes, int cube[], int cube_
 	}
 
 	//check if equal
-	return memcmp(lhs, rhs, 5 * 16);
+	return memcmp(lhs, rhs, NUM_LINEARITY_CHECKS * 16);
 }
 
 void print_nonzero_superpolys(BYTE coefficients[][16], int cube[], int cube_vars)
