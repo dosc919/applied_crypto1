@@ -612,7 +612,7 @@ void search_maxterms_superpolys(int initial_degree_guess, int wanted_number_of_s
 int main()
 {
 	int rounds = 4;
-	int wanted_number_of_superpolys = 140;
+	int wanted_number_of_superpolys = 51;
     //test_keccak_mac(rounds);
     printf("Starting %d round attack on keccak...\n",rounds);
     //offline phase
