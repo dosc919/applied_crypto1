@@ -180,7 +180,7 @@ int three_round_attack()
 		subkey3[i] = key_schedule[2][i];
 	}
 	BYTE K1_22 = (subkey1[3] >> 6) & 0x01;
-	BYTE K3_22 = (subkey3[3] >> 6) % 0x01;
+	BYTE K3_22 = (subkey3[3] >> 6) & 0x01;
 
 	printf("\tActual result of the right side: %01X\n", K1_22^K3_22);
 
