@@ -24,3 +24,16 @@ speeds up the whole calculation so that it is done in ~2 minutes.
 
 ###########################################
 Task 2-C: 
+
+Implementation in matlab/octave
+execute task2c_a.m script to factor with dixons factoring method.
+The number to factor can be entered in the beginning of the script.
+
+the function getNthConvergence(n, number) returns the first n steps
+of the convertions of the number (numerator only)
+
+task2c_c.m script contains the continued fraction factoring method.
+It doesn't work for all numbers including the number from the
+assignment sheet.
+Factoring the 32-bit number from the assignment document works
+fine with task2c_a.m though (in reasonable time: 5~10min).
